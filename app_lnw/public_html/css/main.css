@@ -1,0 +1,108 @@
+body {
+}
+header {
+    width: 100%;
+    position: fixed;
+    z-index: 1000;
+}
+
+#content {
+    padding-top: 100px;
+    clear: both;
+    width: 90%;
+    margin: 0 auto;
+}
+
+#content .leistungsnachweis {
+    
+}
+
+#content .kundendaten {
+}
+
+#content ul {
+    padding: 0px;
+    margin: 0px;
+}
+
+#content ul li {
+    list-style: none;
+    margin-top: 10px
+}
+
+#content ul li label {
+    width: 120px;
+    margin-right: 10px;
+    text-align: right;
+}
+
+.edit {
+    background: url('../img/glyphicons_150_edit.png') no-repeat center center #CCC;
+    height: auto;
+    width: 30px;
+    height: 28px;
+    text-align: center;
+    border-radius: 5px;
+    float: left;
+    margin-left: 10px
+}
+
+.edit:hover {
+    cursor: pointer;
+    background: url('../img/glyphicons_150_edit.png') no-repeat center center #FFF;
+}
+
+.remove {
+    background: url('../img/glyphicons_197_remove.png') no-repeat center center #CCC;
+    height: auto;
+    width: 30px;
+    height: 28px;
+    text-align: center;
+    border-radius: 5px;
+    float: left;
+    margin-left: 10px
+}
+
+.remove:hover {
+    cursor: pointer;
+    background: url('../img/glyphicons_197_remove.png') no-repeat center center #FFF;
+}
+
+.inputKunde {
+    border: 1px solid red !important;
+}
+
+.typeItDesc, .typeItDesc, .drawItDesc {
+    color: #FFF !important;
+}
+
+.sigPad label {
+    color: #FFF !important;
+}
+
+.drawIt a, .typeIt a, .clearButton a {
+    color: #FFF !important;
+}
+
+.pad {
+  position: relative;
+
+  /**
+   * For cross browser compatibility, this should be an absolute URL
+   * In IE the cursor is relative to the HTML document
+   * In all other browsers the cursor is relative to the CSS file
+   *
+   * http://www.useragentman.com/blog/2011/12/21/cross-browser-css-cursor-images-in-depth/
+   */
+  /**
+   * IE will ignore this line because of the hotspot position
+   * Unfortunately we need this twice, because some browsers ignore the hotspot inside the .cur
+   */
+
+  -ms-touch-action: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}

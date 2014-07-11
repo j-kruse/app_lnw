@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html ng-app="appLnw">
+	<head>
+		<title>Leistungsnachweis</title>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<!--<link rel="stylesheet" href="assets/jquery.signaturepad.css">-->
+		<link rel="stylesheet" href="css/bootstrap.min.css">
+		<link rel="stylesheet" href="css/main.css">
+		
+		<script src="js/jquery-1-10-2-min.js"></script>
+		<script src="js/angular.js"></script>
+		<script src="js/bootstraps.min.js"></script>
+		<script src="js/ng-grid-2.0.11.min.js"></script>
+		<script src="js/application.js"></script>
+		<script src="js/print_r.js"></script>
+		<script src="js/jquery.signaturepad.min.js"></script>
+		<script src="assets/json2.min.js"></script>
+		<script src="assets/flashcanvas.js"></script>
+		
+	</head>
+	<body ng-controller="MainController">
+		<header>
+			<div class="navbar navbar-default">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="#">iXperienz</a>
+				</div>
+				<div class="navbar-collapse collapse navbar-responsive-collapse">
+					<ul class="nav navbar-nav">
+						<li class="dropdown">
+							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Options <b class="caret"></b></a>
+							<ul class="dropdown-menu">
+								<li><a href="#" ng-click="LNWTransmit()">Leistungsnachweis übermitteln</a></li>
+								<li class="divider"></li>
+								<li class="dropdown-header">AGB / Datenschutz</li>
+								<li><a href="#">AGB</a></li>
+								<li><a href="#">Datenschutz</a></li>
+								<li><a href="#">Impressum</a></li>
+							</ul>
+						</li>
+					</ul>
+				</div>
+			</div>
+		</header>
+		<div id="content">
+			<div class="well bs-component" ng-hide="auswahlForm">
+				<form class="form-horizontal">
+					<fieldset>
+						<legend>Leistungsnachweis erstellen/auswählen</legend>
+						<div class="form-group" ng-hide="listenerNew">
+							<label for="inputCreateLNWDisabled" class="col-lg-2 control-label">LNW erstellen</label>
+							<div class="col-lg-10">
+								<input type="text" class="form-control" id="inputCreateLNWDisabled" disabled placeholder="Kundenkürzel" ng-model="LNWAuswahl" value="{{LNWAuswahl}}">
+							</div>
+						</div>
+						<div class="form-group" ng-show="listenerNew">
+							<label for="inputCreateLNW" class="col-lg-2 control-label">LNW erstellen</label>
+							<div class="col-lg-10">
+								<input type="text" class="form-control" id="inputCreateLNW" placeholder="Kundenkürzel" ng-model="LNWAuswahl" value="{{LNWAuswahl}}">
+							</div>
+						</div>
+						<div class="form-group" ng-hide="listenerChoose">
+						<label for="select" class="col-lg-2 control-label">LNW auswählen</label>
+							<div class="col-lg-10">
+								<select class="form-control" ng-model="LNWAuswahl" ng-change="hideForms()" ng-options="item as item for item in kundenAuswahlList" id="select">
+									<option value="">-- Leistungsnachweis auswählen --</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-group" ng-show="listenerChoose">
+						<label for="selectDisabled" class="col-lg-2 control-label">LNW auswählen</label>
+							<div class="col-lg-10">
+								<select class="form-control chooselnw" disabled  ng-model="LNWAuswahl" ng-options="item as item for item in kundenAuswahlList" id="selectDisabled">
+									<option value="">-- Leistungsnachweis auswählen --</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-group">
+							<div class="col-lg-10 col-lg-offset-2">
+								<button class="btn btn-primary" ng-hide="loadLNWBtn" ng-click="loadLNW()">Laden</button>
+								<button class="btn btn-primary" ng-hide="createLNWBtn" ng-click="createLNW()">Neu</button>
+								<button class="btn btn-primary" ng-hide="createLNWBtn" ng-click="deleteLNW()">Löschen</button>
+								<button class="btn btn-primary" ng-show="saveLNWBtn" ng-click="saveNewLNW()">Speichern</button>
+								<button class="btn btn-primary" ng-show="saveLNWBtn" ng-click="cancelCreateLNW()">Abbrechen</button>
+							</div>
+						</div>
+					</fieldset>
+				</form>
+			</div>
+			<div class="well bs-component leistungsnachweis" ng-show="kundendatenForm">
+				<form class="form-horizontal">
+					<fieldset>
+						<legend>Kundendaten</legend>
+						<div class="form-group" ng-class="{'has-error': kundeError}">
+							<label for="inputKunde" class="col-lg-2 control-label">Kunde</label>
+							<div class="col-lg-10">
+								<input type="text" class="form-control" id="inputKunde" placeholder="Kunde" ng-model="kunde" value="{{kunde}}">
+							</div>
+						</div>
+						<div class="form-group" ng-class="{'has-error': kundennrError}">
+							<label for="inputKundennr" class="col-lg-2 control-label">Kundenummer</label>
+							<div class="col-lg-10">
+								<input type="text" class="form-control" id="inputKundennr" placeholder="Kundenummer" ng-model="kundennr" value="{{kundennr}}">
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="inputAnsprechpartner" class="col-lg-2 control-label">Ansprechpartner</label>
+							<div class="col-lg-10">
+								<input type="text" class="form-control" id="inputAnsprechpartner" placeholder="Ansprechpartner" ng-model="ansprechpartner" value="{{ansprechpartner}}">
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="inputOrt" class="col-lg-2 control-label">Ort</label>
+							<div class="col-lg-10">
+								<input type="text" class="form-control" id="inputOrt" placeholder="Ort" ng-model="ort" value="{{ort}}">
+							</div>
+						</div>
+						<div class="form-group" ng-class="{'has-error': ixMaError}">
+							<label for="inputiXMA" class="col-lg-2 control-label">iX-Mitarbeiter</label>
+							<div class="col-lg-10">
+								<input type="text" class="form-control" id="inputiXMA" placeholder="iX-Mitarbeiter" ng-model="ixMa" value="{{ixMa}}">
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="inputStandort" class="col-lg-2 control-label">Standort</label>
+							<div class="col-lg-10">
+								<input type="text" class="form-control" id="inputStandort" placeholder="Standort" ng-model="standort" value="{{standort}}">
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="inputVB" class="col-lg-2 control-label">VB</label>
+							<div class="col-lg-10">
+								<input type="text" class="form-control" id="inputVB" placeholder="VB" ng-model="vb" value="{{vb}}">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<div class="col-lg-10 col-lg-offset-2">
+								<button class="btn btn-primary" ng-click="saveKundendaten()" ng-model="kundendatenSuccess">Speichern</button>
+							</div>
+						</div>
+						<div class="form-group">
+							<div ng-show="kundendatenSuccess" class="col-lg-10 col-lg-offset-2">
+								<div class="alert alert-dismissable alert-success">
+									<button type="button" class="close" ng-click="setElementFalse()">×</button>
+									<strong>{{successMessage}}</strong>
+								</div>
+							</div>
+						</div>
+						<div class="form-group">
+							<div ng-show="kundendatenError" class="col-lg-10 col-lg-offset-2">
+								<div class="alert alert-dismissable alert-danger">
+									<button type="button" class="close" ng-click="setElementFalse()">×</button>
+									<div ng-repeat="item in errorMessage"><strong>{{item}}</strong></div>
+								</div>
+							</div>
+						</div>
+					</fieldset>
+				</form>
+			</div>
+			<div class="well bs-component kundendaten" ng-show="leistungsnachweisForm">
+				<form class="form-horizontal">
+					<fieldset>
+						<legend>Leistungsnachweis</legend>
+						<table class="table table-striped table-hover ">
+							<thead>
+								<tr>
+								  <th>Nr.</th>
+								  <th>Auftrag</th>
+								  <th>Pos.</th>
+								  <th>Datum/Tätigkeit</th>
+								  <th>Beginn</th>
+								  <th>Ende</th>
+								  <th>Pause</th>
+								  <th>Ges.-Zeit</th>
+								  <th></th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr ng-repeat="(key, value) in leistungsnachweisList">
+								  <td>{{key+1}}</td>
+								  <td>{{value.auftrag}}</td>
+								  <td>{{value.pos}}</td>
+								  <td>{{value.datumTaetigkeit}}</td>
+								  <td>{{value.beginn}}</td>
+								  <td>{{value.ende}}</td>
+								  <td>{{value.pause}}</td>
+								  <td>{{value.gesZeit}}</td>
+								  <td><div class="edit" ng-click="editData(key, value)"></div><div class="remove" ng-click="deleteArrayElement(key)"></div></td>
+								</tr>
+							</tbody>
+						</table>
+						<div class="form-group">
+							<label for="inputAuftrag" class="col-lg-2 control-label">Auftrag</label>
+							<div class="col-lg-10">
+								<input type="text" class="form-control" id="inputAuftrag" placeholder="Auftrag" ng-model="auftrag" value="{{auftrag}}">
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="inputPos" class="col-lg-2 control-label">Pos.</label>
+							<div class="col-lg-10">
+								<input type="text" class="form-control" id="inputPos" placeholder="Pos." ng-model="pos" value="{{pos}}">
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="inputDatumTaetigkeit" class="col-lg-2 control-label">Datum/Tätigkeit</label>
+							<div class="col-lg-10">
+								<input type="date" class="form-control" id="inputDatumTaetigkeit" placeholder="Datum/Tätigkeit" ng-model="datumTaetigkeit" value="{{datumTaetigkeit}}">
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="inputBeginn" class="col-lg-2 control-label">Beginn</label>
+							<div class="col-lg-10">
+								<input type="text" class="form-control" id="inputBeginn" placeholder="Beginn" ng-model="beginn" value="{{beginn}}">
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="inputEnde" class="col-lg-2 control-label">Ende</label>
+							<div class="col-lg-10">
+								<input type="text" class="form-control" id="inputEnde" placeholder="Ende" ng-model="ende" value="{{ende}}">
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="inputPause" class="col-lg-2 control-label">Pause</label>
+							<div class="col-lg-10">
+								<input type="text" class="form-control" id="inputPause" placeholder="Pause" ng-model="pause" value="{{pause}}">
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="inputgesZeit" class="col-lg-2 control-label">Ges.-Zeit</label>
+							<div class="col-lg-10">
+								<input type="text" class="form-control" id="inputgesZeit" placeholder="Ges.-Zeit" ng-model="gesZeit" value="{{gesZeit}}">
+							</div>
+						</div>
+						
+						<div class="form-group">
+							<div class="col-lg-10 col-lg-offset-2">
+								<button class="btn btn-primary" ng-hide="edit" ng-click="saveLnw()" ng-model="leistungsnachweisSuccess">Hinzufügen</button>
+								<button class="btn btn-primary" ng-show="edit" ng-click="updateLnw()" ng-model="leistungsnachweisSuccess">Ändern</button>
+								<button class="btn btn-primary" ng-click="clearLeistungsnachweis()" ng-model="leistungsnachweisSuccess">Felder leeren</button>
+							</div>
+						</div>
+						<div class="form-group">
+							<div class="col-lg-10 col-lg-offset-2">
+								<div ng-show="leistungsnachweisSuccess" class="alert alert-dismissable alert-success">
+									<button type="button" class="close" ng-click="setElementFalse()">×</button>
+									<strong>{{successMessage}}</strong>
+								</div>
+							</div>
+						</div>
+						<div class="form-group">
+							<div ng-show="leistungsnachweisError" class="col-lg-10 col-lg-offset-2">
+								<div class="alert alert-dismissable alert-danger">
+									<button type="button" class="close" ng-click="setElementFalse()">×</button>
+									<div ng-repeat="item in errorMessageLNW"><strong>{{item}}</strong></div>
+								</div>
+							</div>
+						</div>
+					</fieldset>
+				</form>
+			</div>
+			<div class="clearfix"></div>
+			<div class="well bs-component" ng-show="signatureForm">
+				<form class="form-horizontal sigPad">
+					<fieldset>
+						<legend>Unterschrift</legend>
+						<div class="form-group">
+							<label for="inputSigName" class="col-lg-2 control-label">Name</label>
+							<div class="col-lg-10">
+								<input type="text" class="form-control" id="inputSigName" name="name" placeholder="Unterschrift" ng-model="name" value="{{name}}">
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="inputSigName" class="col-lg-2 control-label">Unterschrift</label>
+							<div class="col-lg-10">
+								<ul class="sigNav">
+									<li class="clearButton"><a href="#clear">Clear</a></li>
+								</ul>
+								<div class="sig sigWrapper current">
+									<div class="typed"></div>
+									<canvas class="pad" width="400" height="120"></canvas>
+									<input type="hidden" name="output" id="output" class="output">
+								</div>
+							</div>
+						</div>
+						<div class="form-group">
+							<div class="col-lg-10 col-lg-offset-2">
+								<button class="btn btn-primary" ng-click="saveSignature()" ng-model="leistungsnachweisSuccess">Speichern</button>
+							</div>
+						</div>
+						<div class="form-group">
+							<div class="col-lg-10 col-lg-offset-2">
+								<div ng-show="signatureSuccess" class="alert alert-dismissable alert-success">
+									<button type="button" class="close" ng-click="setElementFalse()">×</button>
+									<strong>{{successMessage}}</strong>
+								</div>
+							</div>
+						</div>
+						<div class="form-group">
+							<div ng-show="signatureError" class="col-lg-10 col-lg-offset-2">
+								<div class="alert alert-disleistungsnachweisErrormissable alert-danger">
+									<button type="button" class="close" ng-click="setElementFalse()">×</button>
+									<strong>{{signatureErrorMessage}}</strong>
+								</div>
+							</div>
+						</div>
+					</fieldset>
+				</form>
+			</div>
+		</div>
+	</body>
+</html>
