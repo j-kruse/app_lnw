@@ -41,6 +41,8 @@ and open the template in the editor.
 							<a href="#" class="dropdown-toggle" data-toggle="dropdown">Options <b class="caret"></b></a>
 							<ul class="dropdown-menu">
 								<li><a href="#" ng-click="LNWTransmit()">Leistungsnachweis übermitteln</a></li>
+								<li><a href="#" ng-click="showSuccess('success')">Test Succsess</a></li>
+								<li><a href="#" ng-click="showError('error')">Test Error</a></li>
 								<li class="divider"></li>
 								<li class="dropdown-header">AGB / Datenschutz</li>
 								<li><a href="#">AGB</a></li>
@@ -53,6 +55,14 @@ and open the template in the editor.
 			</div>
 		</header>
 		<div id="content">
+			<div class="alert alert-dismissable alert-success" style="position: fixed; width: 90%">
+				<button type="button" class="close" ng-click="setElementFalse()">×</button>
+				<strong>{{successMessage}}</strong>
+			</div>
+			<div class="alert alert-dismissable alert-danger" style="position: fixed; width: 90%">
+				<button type="button" class="close" ng-click="setElementFalse()">×</button>
+				<div ng-repeat="item in errorMessage"><strong>{{item}}</strong></div>
+			</div>
 			<div class="well bs-component" ng-hide="auswahlForm">
 				<form class="form-horizontal">
 					<fieldset>
@@ -149,22 +159,6 @@ and open the template in the editor.
 								<button class="btn btn-primary" ng-click="saveKundendaten()" ng-model="kundendatenSuccess">Speichern</button>
 							</div>
 						</div>
-						<div class="form-group">
-							<div ng-show="kundendatenSuccess" class="col-lg-10 col-lg-offset-2">
-								<div class="alert alert-dismissable alert-success">
-									<button type="button" class="close" ng-click="setElementFalse()">×</button>
-									<strong>{{successMessage}}</strong>
-								</div>
-							</div>
-						</div>
-						<div class="form-group">
-							<div ng-show="kundendatenError" class="col-lg-10 col-lg-offset-2">
-								<div class="alert alert-dismissable alert-danger">
-									<button type="button" class="close" ng-click="setElementFalse()">×</button>
-									<div ng-repeat="item in errorMessage"><strong>{{item}}</strong></div>
-								</div>
-							</div>
-						</div>
 					</fieldset>
 				</form>
 			</div>
@@ -213,7 +207,7 @@ and open the template in the editor.
 							</div>
 						</div>
 						<div class="form-group">
-							<label for="inputDatumTaetigkeit" class="col-lg-2 control-label">Datum/Tätigkeit</label>
+							<label for="inputDatumTaetigkeit" class="col-lg-2 control-label" ng-class="{'has-error': datumTaetigkeitError}">Datum/Tätigkeit</label>
 							<div class="col-lg-10">
 								<input type="date" class="form-control" id="inputDatumTaetigkeit" placeholder="Datum/Tätigkeit" ng-model="datumTaetigkeit" value="{{datumTaetigkeit}}">
 							</div>
@@ -250,22 +244,6 @@ and open the template in the editor.
 								<button class="btn btn-primary" ng-click="clearLeistungsnachweis()" ng-model="leistungsnachweisSuccess">Felder leeren</button>
 							</div>
 						</div>
-						<div class="form-group">
-							<div class="col-lg-10 col-lg-offset-2">
-								<div ng-show="leistungsnachweisSuccess" class="alert alert-dismissable alert-success">
-									<button type="button" class="close" ng-click="setElementFalse()">×</button>
-									<strong>{{successMessage}}</strong>
-								</div>
-							</div>
-						</div>
-						<div class="form-group">
-							<div ng-show="leistungsnachweisError" class="col-lg-10 col-lg-offset-2">
-								<div class="alert alert-dismissable alert-danger">
-									<button type="button" class="close" ng-click="setElementFalse()">×</button>
-									<div ng-repeat="item in errorMessageLNW"><strong>{{item}}</strong></div>
-								</div>
-							</div>
-						</div>
 					</fieldset>
 				</form>
 			</div>
@@ -275,9 +253,19 @@ and open the template in the editor.
 					<fieldset>
 						<legend>Unterschrift</legend>
 						<div class="form-group">
+							<label for="inputSigName" class="col-lg-2 control-label">Kunde / iX Ma</label>
+							<div class="col-lg-10">
+								<select class="form-control" ng-model="unterschriftAuswahl" ng-change="selectSignature()" id="selectSignature">
+									<option value="1">Kunde</option>
+									<option value="2">iX Mitarbeiter</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-group">
 							<label for="inputSigName" class="col-lg-2 control-label">Name</label>
 							<div class="col-lg-10">
-								<input type="text" class="form-control" id="inputSigName" name="name" placeholder="Unterschrift" ng-model="name" value="{{name}}">
+								<input type="text" class="form-control"  ng-hide="signatureSelect" id="inputSigName" name="name" placeholder="Unterschrift Kunde" ng-model="name" value="{{name}}">
+								<input type="text" class="form-control"  ng-show="signatureSelect" id="inputSigName" name="nameixma" placeholder="Unterschrift iX Mitarbeiter" ng-model="nameixma" value="{{nameixma}}">
 							</div>
 						</div>
 						<div class="form-group">
@@ -286,7 +274,7 @@ and open the template in the editor.
 								<ul class="sigNav">
 									<li class="clearButton"><a href="#clear">Clear</a></li>
 								</ul>
-								<div class="sig sigWrapper current">
+								<div class="sig sigWrapper">
 									<div class="typed"></div>
 									<canvas class="pad" width="400" height="120"></canvas>
 									<input type="hidden" name="output" id="output" class="output">
@@ -295,23 +283,8 @@ and open the template in the editor.
 						</div>
 						<div class="form-group">
 							<div class="col-lg-10 col-lg-offset-2">
-								<button class="btn btn-primary" ng-click="saveSignature()" ng-model="leistungsnachweisSuccess">Speichern</button>
-							</div>
-						</div>
-						<div class="form-group">
-							<div class="col-lg-10 col-lg-offset-2">
-								<div ng-show="signatureSuccess" class="alert alert-dismissable alert-success">
-									<button type="button" class="close" ng-click="setElementFalse()">×</button>
-									<strong>{{successMessage}}</strong>
-								</div>
-							</div>
-						</div>
-						<div class="form-group">
-							<div ng-show="signatureError" class="col-lg-10 col-lg-offset-2">
-								<div class="alert alert-disleistungsnachweisErrormissable alert-danger">
-									<button type="button" class="close" ng-click="setElementFalse()">×</button>
-									<strong>{{signatureErrorMessage}}</strong>
-								</div>
+								<button class="btn btn-primary" ng-hide="signatureSelect" ng-click="saveSignature('kunde')" ng-model="leistungsnachweisSuccess">Speichern Kunde</button>
+								<button class="btn btn-primary" ng-show="signatureSelect" ng-click="saveSignature('ixma')" ng-model="leistungsnachweisSuccess">Speichern iX Mitarbeiter</button>
 							</div>
 						</div>
 					</fieldset>

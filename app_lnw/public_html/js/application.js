@@ -2,29 +2,45 @@ angular.module('appLnw', ['ngGrid'])
 	.controller('MainController', function($scope){
 		
 		$('.sigPad').signaturePad({drawOnly:true, lineTop:200});
-  
+		$scope.successMessage = '';
+		$scope.errorMessage = '';
 		$scope.init = function() {
 			var ixAppLnw = localStorage.getItem('ix_app_lnw');
 			if (ixAppLnw == null) {
 				localStorage.setItem('ix_app_lnw', '');
 			}
 			$scope.kundenAuswahlList = $scope.getLocalStorageItems();
+			$scope.unterschriftAuswahl = 1
 		},
 		$scope.hideForms = function() {
 			$scope.kundendatenForm = false;
 			$scope.leistungsnachweisForm = false;
 			$scope.signatureForm = false;
 		},
-		$scope.loadLNW = function() {
+		$scope.loadLNW = function(successErrorIsSet) {
 			if ($scope.LNWAuswahl != null || $scope.LNWAuswahl != undefined) {
 				$scope.kundendatenForm = true;
 				$scope.leistungsnachweisForm = true;
 				$scope.signatureForm = true;
 				$scope.clearKundendaten();
 				$scope.clearLeistungsnachweis();
-				$scope.setElementFalse();
 				$scope.fillFormFromStorage();
+				if (successErrorIsSet !== true) {
+					$scope.successMessage = 'Das Laden des Leistungsnachweis war erfolgreich!';
+					$scope.showSuccess();
+				}
+			} else {
+				$scope.showError(['Es wurde kein Leistungsnachweis ausgewählt!']);
 			}
+		},
+		$scope.showSuccess = function() {
+			$('.alert-success').show(500);
+			$('.alert-success').delay(1500).hide(500);
+		},
+		$scope.showError = function(errorMessage) {
+			$('.alert-danger').show(500);
+			$scope.errorMessage = errorMessage;
+			$('.alert-danger').delay(2000).hide(500);
 		},
 		$scope.createLNW = function() {
 			$scope.listenerNew = true;
@@ -38,6 +54,7 @@ angular.module('appLnw', ['ngGrid'])
 			$scope.signatureForm = false;
 		},
 		$scope.deleteLNW = function() {
+			$scope.hideForms();
 			if ($scope.LNWAuswahl != undefined) {
 				var array = $scope.getLocalStorageItems();
 				var index = $.inArray($scope.LNWAuswahl, array);
@@ -46,6 +63,8 @@ angular.module('appLnw', ['ngGrid'])
 				localStorage.setItem('ix_app_lnw', jSONObj);
 				localStorage.removeItem($scope.LNWAuswahl);
 				$scope.LNWAuswahl = undefined;
+				$scope.successMessage = 'Das Löschen des Leistungsnachweis war erfolgreich!';
+				$scope.showSuccess();
 				$scope.init();
 			}
 		},
@@ -65,8 +84,11 @@ angular.module('appLnw', ['ngGrid'])
 			$scope.saveLNWBtn = false;
 			$scope.setLocalStorageItems();
 			$scope.init();
-			var jSONObj = '{"kundendaten": "", "leistungsnachweis": "", "signature": ""}';
+			var jSONObj = '{"kundendaten": "", "leistungsnachweis": "", "signature": "", "signatureixma": ""}';
 			localStorage.setItem($scope.LNWAuswahl, jSONObj);
+			$scope.loadLNW(true);
+			$scope.successMessage = 'Ein neuer Leistungsnachweis wurde erfolgreich angelegt!';
+			$scope.showSuccess();
 		},
 		$scope.setLocalStorageItems = function() {
 			var storageItems = $scope.getLocalStorageItems();
@@ -95,25 +117,20 @@ angular.module('appLnw', ['ngGrid'])
 			jSONObj = [];
 			if (art == 'kundendaten') {
 				jSONObj.push("kudendaten");
-				$scope.kundendatenError = false;
 				$scope.kundeError = false;
 				$scope.kundennrError = false;
 				$scope.ixMaError = false;
-				if($scope.kunde == undefined || $scope.kundennr == undefined || $scope.ixMa == undefined || $scope.kunde == '' || $scope.kundennr == '' || $scope.ixMa == '') {
-					$scope.kundendatenError = true;
+				if($scope.kunde == undefined || $scope.ixMa == undefined || $scope.kunde == '' || $scope.ixMa == '') {
 					$scope.errorMessage = [];
 					if($scope.kunde == undefined || $scope.kunde == '') {
 						$scope.errorMessage.push('Das Feld Kunde darf nicht leer sein!');
 						$scope.kundeError = true;
 					}
-					if ($scope.kundennr == undefined || $scope.kundennr == '') {
-						$scope.errorMessage.push('Das Feld Kundennummer darf nicht leer sein!');
-						$scope.kundennrError = true;
-					}
 					if ($scope.ixMa == undefined || $scope.ixMa == '') {
 						$scope.errorMessage.push('Das Feld iX-Mitarbeiter darf nicht leer sein!');
 						$scope.ixMaError = true;
 					}
+					$scope.showError($scope.errorMessage);
 					return false;
 				}
 				jSONObj['kundendaten'] = [];
@@ -148,30 +165,32 @@ angular.module('appLnw', ['ngGrid'])
 		$scope.saveKundendaten = function() {
 			var kundendaten = $scope.setKundenDaten();
 			var leistungsnachweis;
-			var signature = JSON.stringify($scope.getSignature());
+			var signature = JSON.stringify($scope.getSignature('kunde'));
+			var signatureixma = JSON.stringify($scope.getSignature('ixma'));
 			if ($scope.datumTaetigkeit == undefined || $scope.datumTaetigkeit == '') {
 				leistungsnachweis = '""';
 			} else {
 				leistungsnachweis = $scope.setLeistungsnachweis();
 			}
 			if (kundendaten != false) {
-				var jSONObj = '{"kundendaten": '+kundendaten+', "leistungsnachweis": '+leistungsnachweis+', "signature": '+signature+'}';
+				var jSONObj = '{"kundendaten": '+kundendaten+', "leistungsnachweis": '+leistungsnachweis+', "signature": '+signature+', "signatureixma": '+signatureixma+'}';
 				localStorage.setItem($scope.LNWAuswahl, jSONObj);
-				$scope.kundendatenSuccess = true;
 				$scope.successMessage = 'Kundendaten erfolgreich gespeichert.';
+				$scope.showSuccess();
 			}
 		},
 		$scope.updateLnw = function() {
 			$scope.deleteArrayElement($scope.key);
 			var leistungsnachweis = $scope.generateJSON('updateLnw');
 			var kundendaten = $scope.setKundenDaten();
-			var signature = JSON.stringify($scope.getSignature());
-			var jSONObj = '{"kundendaten": '+kundendaten+', "leistungsnachweis": '+leistungsnachweis+', "signature": '+signature+'}';
+			var signature = JSON.stringify($scope.getSignature('kunde'));
+			var signatureixma = JSON.stringify($scope.getSignature('ixma'));
+			var jSONObj = '{"kundendaten": '+kundendaten+', "leistungsnachweis": '+leistungsnachweis+', "signature": '+signature+', "signatureixma": '+signatureixma+'}';
 			localStorage.setItem($scope.LNWAuswahl, jSONObj);
 			$scope.setList();
-			$scope.leistungsnachweisSuccess = true;
 			$scope.edit = false;
 			$scope.successMessage = 'Das Ändern der Daten war erfolgreich!';
+			$scope.showSuccess();
 			$scope.clearLeistungsnachweis();
 		},
 		$scope.editData = function(key, value) {
@@ -192,57 +211,64 @@ angular.module('appLnw', ['ngGrid'])
 			$scope.getLocalStorageItems();
 		},
 		$scope.saveLnw = function() {
-			$scope.leistungsnachweisError = false;
 			var kundendaten = $scope.setKundenDaten();
-			var signature = JSON.stringify($scope.getSignature());
+			var signature = JSON.stringify($scope.getSignature('kunde'));
+			var signatureixma = JSON.stringify($scope.getSignature('ixma'));
 			if ($scope.datumTaetigkeit == undefined || $scope.datumTaetigkeit == '') {
 				leistungsnachweis = JSON.stringify($scope.getLeistungsnachweis());
-				$scope.leistungsnachweisError = true;
 				$scope.errorMessageLNW = [];
 				$scope.errorMessageLNW.push('Das Feld Datum/Tätigkeit darf nicht leer sein!');
-				$scope.kundeError = true;
+				$scope.datumTaetigkeitError = true;
+				$scope.showError($scope.errorMessageLNW);
 			} else {
 				var leistungsnachweis = $scope.setLeistungsnachweis();
 			}
 			
-			var jSONObj = '{"kundendaten": '+kundendaten+', "leistungsnachweis": '+leistungsnachweis+', "signature": '+signature+'}';
+			var jSONObj = '{"kundendaten": '+kundendaten+', "leistungsnachweis": '+leistungsnachweis+', "signature": '+signature+', "signatureixma": '+signatureixma+'}';
 			localStorage.setItem($scope.LNWAuswahl, jSONObj);
-			if ($scope.setList() != false && $scope.leistungsnachweisError == false) {
-				$scope.leistungsnachweisSuccess = true;
-				$scope.successMessage = "Das hinzufügen des Datensatzes war erfolgreich.";
+			if ($scope.setList() != false) {
+				$scope.successMessage = 'Das hinzufügen des Datensatzes war erfolgreich.';
+				$scope.showSuccess();
 			}
 		},
-		$scope.saveSignature = function() {
-			$scope.setElementFalse();
+		$scope.selectSignature = function() {
+			if ($scope.unterschriftAuswahl == 1) {
+				$scope.signatureSelect = false;
+			} else if ($scope.unterschriftAuswahl == 2) {
+				$scope.signatureSelect = true;
+			}
+			$scope.fillFormFromStorage();
+		},
+		$scope.saveSignature = function(p) {
 			var kundendaten = $scope.setKundenDaten();
 			if (kundendaten != false) {
 				var leistungsnachweis = JSON.stringify($scope.getLeistungsnachweis());
-				var output = $('.output').val();
-				var signature = [];
-				signature.push({"name": $scope.name, "signature": output});
-				signature = JSON.stringify(signature);
-				var jSONObj = '{"kundendaten": '+kundendaten+', "leistungsnachweis": '+leistungsnachweis+', "signature": '+signature+'}';
+				var signature = JSON.stringify($scope.getSignature('kunde'));
+				var signatureixma = JSON.stringify($scope.getSignature('ixma'));
+				if (p == 'kunde') {
+					var output = $('.output').val();
+					signature = [];
+					signature.push({"name": $scope.name, "signature": output});
+					signature = JSON.stringify(signature);
+				} else if (p == 'ixma') {
+					var output = $('.output').val();
+					signatureixma = [];
+					signatureixma.push({"name": $scope.nameixma, "signature": output});
+					signatureixma = JSON.stringify(signatureixma);
+				}
+				
+				var jSONObj = '{"kundendaten": '+kundendaten+', "leistungsnachweis": '+leistungsnachweis+', "signature": '+signature+', "signatureixma": '+signatureixma+'}';
 				localStorage.setItem($scope.LNWAuswahl, jSONObj);
-				$scope.signatureSuccess = true;
 				$scope.successMessage = 'Unterschrift wurde erfolgreich gespeichert.';
+				$scope.showSuccess();
 			} else {
-				$scope.signatureError = true;
-				$scope.signatureErrorMessage = 'Die Unterschrift konnte nicht gespeichert werden. Füllen Sie bitte zuerst die Kundendaten aus!';
+				$scope.signatureErrorMessage = ['Die Unterschrift konnte nicht gespeichert werden. Füllen Sie bitte zuerst die Kundendaten aus!'];
+				$scope.showError($scope.signatureErrorMessage);
 			}
 		},
 		$scope.countLeistungsnachweis = function() {
 			var items = $scope.getLeistungsnachweis();
 			return items.length;
-		},
-		$scope.setElementFalse = function() {
-			$scope.kundendatenSuccess = false;
-			$scope.leistungsnachweisSuccess =false;
-			$scope.kundendatenError = false;
-			$scope.kundeError = false;
-			$scope.kundennrError = false;
-			$scope.ixMaError = false;
-			$scope.signatureSuccess = false;
-			$scope.signatureError = false;
 		},
 		$scope.fillFormFromStorage = function() {
 			var jSONObj = localStorage.getItem($scope.LNWAuswahl);
@@ -261,10 +287,16 @@ angular.module('appLnw', ['ngGrid'])
 			} else {
 				$scope.leistungsnachweisList = '';
 			}
-			var signature = $scope.getSignature()
+			var signature = $scope.getSignature('kunde');
+			var signatureixma = $scope.getSignature('ixma');
 			$scope.name = signature[0]['name'];
-			$('.sigPad').signaturePad({displayOnly:true}).regenerate(signature[0]['signature']);
-		}
+			$scope.nameixma = signatureixma[0]['name'];
+				if ($scope.unterschriftAuswahl == 1) {
+					$('.sigPad').signaturePad({displayOnly:true}).regenerate(signature[0]['signature']);
+				} else if ($scope.unterschriftAuswahl == 2) {
+					$('.sigPad').signaturePad({displayOnly:true}).regenerate(signatureixma[0]['signature']);
+				}
+		},
 		$scope.getLeistungsnachweis = function() {
 			var jSONObj = localStorage.getItem($scope.LNWAuswahl);
 			$scope.leistungsNachweis = $.parseJSON(jSONObj);
@@ -272,14 +304,23 @@ angular.module('appLnw', ['ngGrid'])
 			leistungsnachweis = $scope.leistungsNachweis['leistungsnachweis'];
 			return leistungsnachweis;
 		},
-		$scope.getSignature = function() {
+		$scope.getSignature = function(p) {
 			var jSONObj = localStorage.getItem($scope.LNWAuswahl);
-			var signature = $.parseJSON(jSONObj);
-			$scope.signature = signature['signature'];
-			if (signature['signature'] == '') {
-				return '""';
+			if (p == 'kunde') {
+				var signature = $.parseJSON(jSONObj);
+				$scope.signature = signature['signature'];
+				if (signature['signature'] == '') {
+					return '""';
+				}
+				return $scope.signature;
+			} else if (p == 'ixma') {
+				var signatureixma = $.parseJSON(jSONObj);
+				$scope.signatureixma = signatureixma['signatureixma'];
+				if (signatureixma['signature'] == '') {
+					return '""';
+				}
+			return $scope.signatureixma;
 			}
-			return $scope.signature;
 		},
 		$scope.setList = function() {
 			$scope.leistungsnachweisList = $scope.getLeistungsnachweis();
@@ -314,7 +355,7 @@ angular.module('appLnw', ['ngGrid'])
 			var leistungsnachweis = JSON.stringify($scope.leistungsnachweisList);
 			var kundendaten = $scope.setKundenDaten();
 			var signature = JSON.stringify($scope.getSignature());
-			var jSONObj = '{"kundendaten": '+kundendaten+', "leistungsnachweis": '+leistungsnachweis+', "signature": '+signature+'}';
+			var jSONObj = '{"kundendaten": '+kundendaten+', "leistungsnachweis": '+leistungsnachweis+', "signature": '+signature+' ,"signatureixma": '+signatureixma+'}';
 			localStorage.setItem($scope.LNWAuswahl, jSONObj);
 		},
 		$scope.convertDateFormat = function(date, format) {
@@ -346,22 +387,40 @@ angular.module('appLnw', ['ngGrid'])
 			$scope.ixMa = '';
 			$scope.standort = '';
 			$scope.vb = '';
-		}
+		},
 		$scope.LNWTransmit = function() {
 			if ($scope.LNWAuswahl != undefined) {
 				var jSONObj = localStorage.getItem($scope.LNWAuswahl);
-				$.ajax(
-				{
-					type: "POST",
-					url: "http://shop.ixperienz.info/app_lnw_handling/index.php",
-					success: function() {
-						alert('');
+				$scope.successMessage = 'Der Leistungsnachweis wurde erfolgreich übermittelt!';
+				$scope.errorMessage = ['Vor dem übermitteln muss erst ein Leistungsnachweis geladen werden!'];
+				$.ajax({
+					type: 'POST',
+					url: 'http://shop.ixperienz.info/app_lnw_handling/index.php',
+					crossDomain: true,
+					data: "lnw="+jSONObj,
+					dataType: 'json',
+					success: function(responseData, textStatus, jqXHR, transmitError) 
+					{
+						if (responseData['response'] == 'success') {
+							if ($scope.kundendatenForm === true && $scope.leistungsnachweisForm === true && $scope.signatureForm === true) {
+								
+								$scope.showSuccess();
+							} else {
+								$scope.showError(transmitError);
+							}
+						}
+					},
+					error: function (responseData, textStatus, errorThrown) 
+					{
+						console.warn(responseData, textStatus, errorThrown);
+						alert('CORS failed - ' + textStatus);
 					}
 				});
+			} else {
+				$scope.showError(['Vor dem übermitteln muss erst ein Leistungsnachweis ausgewählt werden!']);
 			}
 		},
-		$scope.init();
-		
+		$scope.init()
 	});
 	
 function setCookie(jSONObj, exdays) {
@@ -370,10 +429,6 @@ function setCookie(jSONObj, exdays) {
 	d.setTime(d.getTime() + (exdays*24*60*60*1000));
 	var expires = "expires="+d.toGMTString();
 	document.cookie = jSONObj + "; " + expires;
-}
-function getCookie() {
-	var ca = document.cookie.split(';');
-	return ca[0];
 }
 
 function cl(variable) {

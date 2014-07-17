@@ -106,3 +106,8 @@ header {
   -o-user-select: none;
   user-select: none;
 }
+
+.alert {
+    display: none;
+    z-index: 1000;
+}
